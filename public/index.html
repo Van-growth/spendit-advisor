@@ -707,6 +707,19 @@ async function saveSession() {
   } catch (_) {}
 }
 
+// 관리자가 입력한 회사명을 즉시 칩에 표시
+async function loadCompanyName() {
+  if (!__clientId) return;
+  try {
+    const res = await fetch(`/api/session-info/${__clientId}`);
+    const data = await res.json();
+    if (!data.ok) return;
+    const chip = document.getElementById('custChip');
+    chip.textContent = data.companyName;
+    chip.style.display = 'inline-block';
+  } catch (_) {}
+}
+
 async function loadSession() {
   if (!__clientId) return;
   try {
@@ -721,8 +734,7 @@ async function loadSession() {
     if (c) Object.assign(confirmed, c);
     if (customer) customerInfo = customer;
 
-    document.getElementById('custChip').textContent = customerInfo.name;
-    document.getElementById('custChip').style.display = 'inline-block';
+    // 사이드바 상세정보만 업데이트 (칩은 관리자 입력값 유지)
     document.getElementById('sbCustomer').innerHTML = `
       <div class="sb-customer-name">${customerInfo.name}</div>
       <div class="sb-customer-meta">${customerInfo.meta}</div>`;
@@ -736,7 +748,10 @@ async function loadSession() {
   } catch (_) {}
 }
 
-document.addEventListener('DOMContentLoaded', loadSession);
+document.addEventListener('DOMContentLoaded', () => {
+  loadCompanyName();
+  loadSession();
+});
 
 function totalQ() { return SECTIONS.reduce((a,s) => a+s.questions.length, 0); }
 function confirmedCount() { return Object.values(confirmed).filter(Boolean).length; }
@@ -820,8 +835,7 @@ async function runAnalysis() {
     customerInfo = parsed.customer || { name:'분석된 고객사', meta:'' };
     aiDrafts = parsed.drafts || {};
 
-    document.getElementById('custChip').textContent = customerInfo.name;
-    document.getElementById('custChip').style.display = 'inline-block';
+    // 사이드바 상세정보만 업데이트 (우측 상단 칩은 관리자 입력값 유지)
     document.getElementById('sbCustomer').innerHTML = `
       <div class="sb-customer-name">${customerInfo.name}</div>
       <div class="sb-customer-meta">${customerInfo.meta}</div>`;

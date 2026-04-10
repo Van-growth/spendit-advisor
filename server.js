@@ -144,6 +144,14 @@ app.get('/api/sessions', (req, res) => {
   res.json({ ok: true, sessions: list });
 });
 
+// ── 세션 회사명 조회 (인증 불필요) ──
+app.get('/api/session-info/:clientId', (req, res) => {
+  const { clientId } = req.params;
+  const meta = sessions.get(clientId);
+  if (!meta) return res.status(404).json({ ok: false, error: '세션 없음' });
+  res.json({ ok: true, companyName: meta.companyName });
+});
+
 // ── 세션 데이터 조회 ──
 app.get('/api/session/:clientId', (req, res) => {
   const { clientId } = req.params;
