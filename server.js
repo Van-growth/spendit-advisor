@@ -50,42 +50,57 @@ const SYSTEM_PROMPT = `당신은 스팬딧(Spendit) 경비관리 솔루션 전�
 - 한국어로 답변`;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'spendit2024';
 const DATA_DIR = path.join(__dirname, 'data');
+const SESSIONS_FILE = path.join(DATA_DIR, 'sessions.json');
 
 // ── data 폴더 생성 ──
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR);
 
 // ── 세션 저장소 ──
-const sessions = new Map(); // clientId → { company, createdAt }
+const sessions = new Map(); // clientId → { companyName, createdAt }
 
 function sessionFile(clientId) {
   return path.join(DATA_DIR, `${clientId}.json`);
 }
 
-function saveSessionMeta(clientId) {
-  const meta = sessions.get(clientId);
-  if (!meta) return;
-  const file = sessionFile(clientId);
-  let existing = {};
-  if (fs.existsSync(file)) {
-    try { existing = JSON.parse(fs.readFileSync(file, 'utf-8')); } catch (_) {}
+// sessions.json 전체 저장
+function saveSessionsFile() {
+  const obj = {};
+  for (const [id, meta] of sessions.entries()) {
+    obj[id] = meta;
   }
-  fs.writeFileSync(file, JSON.stringify({ ...existing, ...meta }, null, 2));
+  fs.writeFileSync(SESSIONS_FILE, JSON.stringify(obj, null, 2));
 }
 
-// ── 서버 시작 시 data/ 폴더에서 세션 복원 ──
+// ── 서버 시작 시 sessions.json 복원 ──
 (function loadPersistedSessions() {
-  if (!fs.existsSync(DATA_DIR)) return;
-  const files = fs.readdirSync(DATA_DIR).filter(f => f.endsWith('.json'));
+  if (fs.existsSync(SESSIONS_FILE)) {
+    try {
+      const obj = JSON.parse(fs.readFileSync(SESSIONS_FILE, 'utf-8'));
+      for (const [id, meta] of Object.entries(obj)) {
+        if (meta.companyName && meta.createdAt) {
+          sessions.set(id, { companyName: meta.companyName, createdAt: meta.createdAt });
+        }
+      }
+      console.log(`✅ ${sessions.size}개 세션 복원됨 (sessions.json)`);
+      return;
+    } catch (_) {}
+  }
+  // fallback: 기존 개별 json 파일에서 복원
+  const files = fs.readdirSync(DATA_DIR).filter(f => f.endsWith('.json') && f !== 'sessions.json');
   for (const f of files) {
     try {
       const data = JSON.parse(fs.readFileSync(path.join(DATA_DIR, f), 'utf-8'));
       const clientId = f.replace('.json', '');
-      if (data.company && data.createdAt) {
-        sessions.set(clientId, { company: data.company, createdAt: data.createdAt });
+      const companyName = data.companyName || data.company;
+      if (companyName && data.createdAt) {
+        sessions.set(clientId, { companyName, createdAt: data.createdAt });
       }
     } catch (_) {}
   }
-  console.log(`✅ ${sessions.size}개 세션 복원됨`);
+  if (sessions.size > 0) {
+    saveSessionsFile(); // 마이그레이션: sessions.json 신규 생성
+    console.log(`✅ ${sessions.size}개 세션 복원됨 (개별 파일 → sessions.json 마이그레이션)`);
+  }
 })();
 
 function randomCode() {
@@ -113,10 +128,10 @@ app.post('/api/create-session', (req, res) => {
   const pw = req.headers['x-admin-pw'] || req.body.pw;
   if (pw !== ADMIN_PASSWORD) return res.status(403).json({ ok: false, error: '권한 없음' });
 
-  const company = (req.body.company || 'client').trim();
-  const clientId = `${slugify(company)}-${randomCode()}`;
-  sessions.set(clientId, { company, createdAt: new Date().toISOString() });
-  saveSessionMeta(clientId);
+  const companyName = (req.body.company || 'client').trim();
+  const clientId = `${slugify(companyName)}-${randomCode()}`;
+  sessions.set(clientId, { companyName, createdAt: new Date().toISOString() });
+  saveSessionsFile();
   res.json({ ok: true, clientId });
 });
 
@@ -125,7 +140,7 @@ app.get('/api/sessions', (req, res) => {
   const pw = req.query.pw;
   if (pw !== ADMIN_PASSWORD) return res.status(403).json({ ok: false, error: '권한 없음' });
 
-  const list = [...sessions.entries()].map(([id, v]) => ({ clientId: id, ...v }));
+  const list = [...sessions.entries()].map(([id, v]) => ({ clientId: id, companyName: v.companyName, createdAt: v.createdAt }));
   res.json({ ok: true, sessions: list });
 });
 
