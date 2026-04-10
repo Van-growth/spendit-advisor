@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Spendit Discovery Reviewer</title>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
 
@@ -350,7 +351,17 @@ textarea.q-input::placeholder{color:var(--muted);}
   border-radius:11px;padding:10px 13px;font-size:13px;line-height:1.65;
 }
 .setup-msg.user .setup-bubble{background:var(--blue);color:#fff;border-color:var(--blue);}
-.setup-bubble strong{font-weight:600;}
+.setup-bubble h1,.setup-bubble h2,.setup-bubble h3,.setup-bubble h4{
+  font-size:13px;font-weight:700;margin:10px 0 4px;color:var(--navy);
+}
+.setup-bubble ul,.setup-bubble ol{padding-left:16px;margin:4px 0;}
+.setup-bubble li{margin:3px 0;font-size:13px;}
+.setup-bubble table{width:100%;border-collapse:collapse;margin:8px 0;font-size:12px;}
+.setup-bubble th{background:var(--bg);padding:6px 8px;text-align:left;font-weight:600;border-bottom:1px solid var(--border);}
+.setup-bubble td{padding:6px 8px;border-bottom:1px solid var(--border);}
+.setup-bubble hr{border:none;border-top:1px solid var(--border);margin:10px 0;}
+.setup-bubble p{margin:4px 0;}
+.setup-bubble strong{font-weight:700;color:var(--ink);}
 .setup-bubble code{
   font-family:'DM Mono',monospace;background:var(--blue-dim);
   color:var(--blue);border-radius:4px;padding:1px 5px;font-size:11.5px;
@@ -887,9 +898,8 @@ function deleteComment(qid, index) {
 }
 
 function formatDraft(text) {
-  return text
-    .replace(/⚠ 확인 필요:([^<\n]+)/g, '<em>⚠ 확인 필요:$1</em>')
-    .replace(/\n/g, '<br>');
+  const rendered = marked.parse(text);
+  return rendered.replace(/⚠ 확인 필요:([^<\n]+)/g, '<em>⚠ 확인 필요:$1</em>');
 }
 
 function getInitial() { return customerInfo.name ? customerInfo.name[0] : '나'; }
@@ -1150,14 +1160,7 @@ function addSetupTyping() {
 function removeSetupTyping() { const t=document.getElementById('setupTyping'); if(t)t.remove(); }
 
 function fmtReply(t) {
-  return t
-    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
-    .replace(/`([^`]+)`/g,'<code>$1</code>')
-    .replace(/^### (.+)$/gm,'<h4 style="font-size:12.5px;font-weight:700;margin:10px 0 4px;color:var(--navy);">$1</h4>')
-    .replace(/^## (.+)$/gm,'<h4 style="font-size:13px;font-weight:700;margin:10px 0 4px;color:var(--navy);">$1</h4>')
-    .replace(/^- (.+)$/gm,'<li style="margin:2px 0;">$1</li>')
-    .replace(/(<li[^>]*>.*?<\/li>\n?)+/gs, m => `<ul style="padding-left:14px;margin:4px 0;">${m}</ul>`)
-    .replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>');
+  return marked.parse(t);
 }
 
 // ─────────────────────────────────────────
