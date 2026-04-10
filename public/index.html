@@ -693,6 +693,51 @@ function initThreads() {
 }
 initThreads();
 
+// ─────────────────────────────────────────
+//  SESSION PERSISTENCE
+// ─────────────────────────────────────────
+async function saveSession() {
+  if (!__clientId || !discGenerated) return;
+  try {
+    await fetch(`/api/session/${__clientId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-client-id': __clientId },
+      body: JSON.stringify({ drafts: aiDrafts, threads, confirmed, customer: customerInfo })
+    });
+  } catch (_) {}
+}
+
+async function loadSession() {
+  if (!__clientId) return;
+  try {
+    const res = await fetch(`/api/session/${__clientId}`);
+    const data = await res.json();
+    if (!data.ok || !data.data) return;
+    const { drafts, threads: t, confirmed: c, customer } = data.data;
+    if (!drafts) return;
+
+    aiDrafts = drafts;
+    if (t) Object.assign(threads, t);
+    if (c) Object.assign(confirmed, c);
+    if (customer) customerInfo = customer;
+
+    document.getElementById('custChip').textContent = customerInfo.name;
+    document.getElementById('custChip').style.display = 'inline-block';
+    document.getElementById('sbCustomer').innerHTML = `
+      <div class="sb-customer-name">${customerInfo.name}</div>
+      <div class="sb-customer-meta">${customerInfo.meta}</div>`;
+
+    discGenerated = true;
+    renderDiscovery();
+    buildSectionNav();
+    updateProgress();
+    switchTab(2);
+    document.getElementById('tab2').classList.add('active');
+  } catch (_) {}
+}
+
+document.addEventListener('DOMContentLoaded', loadSession);
+
 function totalQ() { return SECTIONS.reduce((a,s) => a+s.questions.length, 0); }
 function confirmedCount() { return Object.values(confirmed).filter(Boolean).length; }
 
@@ -787,6 +832,7 @@ async function runAnalysis() {
     updateProgress();
     switchTab(2);
     document.getElementById('tab2').classList.add('active');
+    saveSession();
 
   } catch(e) {
     hideOverlay();
@@ -895,6 +941,7 @@ function deleteComment(qid, index) {
   const q = findQ(qid);
   if (card && q) card.replaceWith(renderQCard(q));
   updateProgress();
+  saveSession();
 }
 
 function formatDraft(text) {
@@ -938,6 +985,7 @@ function addComment(qid) {
     card.replaceWith(newCard);
   }
   updateProgress();
+  saveSession();
 }
 
 function toggleConfirm(qid) {
@@ -950,6 +998,7 @@ function toggleConfirm(qid) {
   }
   updateProgress();
   refreshSectionHeaders();
+  saveSession();
 
   // unlock setup if >50%
   const pct = confirmedCount() / totalQ();

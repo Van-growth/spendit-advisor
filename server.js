@@ -3,6 +3,7 @@ const Anthropic = require('@anthropic-ai/sdk');
 const multer = require('multer');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
@@ -13,9 +14,44 @@ app.use(express.json({ limit: '10mb' }));
 
 const SYSTEM_PROMPT = `당신은 스팬딧(Spendit) 경비관리 솔루션 전문가이자 세일즈 어드바이저입니다.`;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'spendit2024';
+const DATA_DIR = path.join(__dirname, 'data');
+
+// ── data 폴더 생성 ──
+if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR);
 
 // ── 세션 저장소 ──
 const sessions = new Map(); // clientId → { company, createdAt }
+
+function sessionFile(clientId) {
+  return path.join(DATA_DIR, `${clientId}.json`);
+}
+
+function saveSessionMeta(clientId) {
+  const meta = sessions.get(clientId);
+  if (!meta) return;
+  const file = sessionFile(clientId);
+  let existing = {};
+  if (fs.existsSync(file)) {
+    try { existing = JSON.parse(fs.readFileSync(file, 'utf-8')); } catch (_) {}
+  }
+  fs.writeFileSync(file, JSON.stringify({ ...existing, ...meta }, null, 2));
+}
+
+// ── 서버 시작 시 data/ 폴더에서 세션 복원 ──
+(function loadPersistedSessions() {
+  if (!fs.existsSync(DATA_DIR)) return;
+  const files = fs.readdirSync(DATA_DIR).filter(f => f.endsWith('.json'));
+  for (const f of files) {
+    try {
+      const data = JSON.parse(fs.readFileSync(path.join(DATA_DIR, f), 'utf-8'));
+      const clientId = f.replace('.json', '');
+      if (data.company && data.createdAt) {
+        sessions.set(clientId, { company: data.company, createdAt: data.createdAt });
+      }
+    } catch (_) {}
+  }
+  console.log(`✅ ${sessions.size}개 세션 복원됨`);
+})();
 
 function randomCode() {
   return Math.random().toString(36).slice(2, 8);
@@ -45,6 +81,7 @@ app.post('/api/create-session', (req, res) => {
   const company = (req.body.company || 'client').trim();
   const clientId = `${slugify(company)}-${randomCode()}`;
   sessions.set(clientId, { company, createdAt: new Date().toISOString() });
+  saveSessionMeta(clientId);
   res.json({ ok: true, clientId });
 });
 
@@ -55,6 +92,38 @@ app.get('/api/sessions', (req, res) => {
 
   const list = [...sessions.entries()].map(([id, v]) => ({ clientId: id, ...v }));
   res.json({ ok: true, sessions: list });
+});
+
+// ── 세션 데이터 조회 ──
+app.get('/api/session/:clientId', (req, res) => {
+  const { clientId } = req.params;
+  if (!sessions.has(clientId)) return res.status(401).json({ ok: false, error: '유효하지 않은 세션' });
+
+  const file = sessionFile(clientId);
+  if (!fs.existsSync(file)) return res.json({ ok: true, data: null });
+
+  try {
+    const raw = JSON.parse(fs.readFileSync(file, 'utf-8'));
+    const { drafts, threads, confirmed, customer } = raw;
+    res.json({ ok: true, data: { drafts, threads, confirmed, customer } });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// ── 세션 데이터 저장 ──
+app.post('/api/session/:clientId', requireSession, (req, res) => {
+  const { clientId } = req.params;
+  const { drafts, threads, confirmed, customer } = req.body;
+
+  const file = sessionFile(clientId);
+  let existing = {};
+  if (fs.existsSync(file)) {
+    try { existing = JSON.parse(fs.readFileSync(file, 'utf-8')); } catch (_) {}
+  }
+  const updated = { ...existing, drafts, threads, confirmed, customer };
+  fs.writeFileSync(file, JSON.stringify(updated, null, 2));
+  res.json({ ok: true });
 });
 
 // ── 관리자 페이지 ──
