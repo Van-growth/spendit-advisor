@@ -10,9 +10,63 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
-app.use(express.static(path.join(__dirname, 'public')));
 
 const SYSTEM_PROMPT = `당신은 스팬딧(Spendit) 경비관리 솔루션 전문가이자 세일즈 어드바이저입니다.`;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'spendit2024';
+
+// ── 세션 저장소 ──
+const sessions = new Map(); // clientId → { company, createdAt }
+
+function randomCode() {
+  return Math.random().toString(36).slice(2, 8);
+}
+
+function slugify(name) {
+  return name.trim().toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '')
+    .slice(0, 30);
+}
+
+// ── 세션 검증 미들웨어 ──
+function requireSession(req, res, next) {
+  const clientId = req.headers['x-client-id'];
+  if (!clientId || !sessions.has(clientId)) {
+    return res.status(401).json({ ok: false, error: '유효하지 않은 세션입니다.' });
+  }
+  next();
+}
+
+// ── 세션 생성 API ──
+app.post('/api/create-session', (req, res) => {
+  const pw = req.headers['x-admin-pw'] || req.body.pw;
+  if (pw !== ADMIN_PASSWORD) return res.status(403).json({ ok: false, error: '권한 없음' });
+
+  const company = (req.body.company || 'client').trim();
+  const clientId = `${slugify(company)}-${randomCode()}`;
+  sessions.set(clientId, { company, createdAt: new Date().toISOString() });
+  res.json({ ok: true, clientId });
+});
+
+// ── 세션 목록 API ──
+app.get('/api/sessions', (req, res) => {
+  const pw = req.query.pw;
+  if (pw !== ADMIN_PASSWORD) return res.status(403).json({ ok: false, error: '권한 없음' });
+
+  const list = [...sessions.entries()].map(([id, v]) => ({ clientId: id, ...v }));
+  res.json({ ok: true, sessions: list });
+});
+
+// ── 관리자 페이지 ──
+app.get('/admin', (req, res) => {
+  if (req.query.pw !== ADMIN_PASSWORD) {
+    return res.status(403).send('<h2 style="font-family:sans-serif;padding:40px">403 Forbidden — 비밀번호가 필요합니다: /admin?pw=...</h2>');
+  }
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
+// ── 정적 파일 (admin 라우트 이후) ──
+app.use(express.static(path.join(__dirname, 'public')));
 
 function extractText(file) {
   const ext = file.originalname.split('.').pop().toLowerCase();
@@ -22,7 +76,7 @@ function extractText(file) {
   return `[${file.originalname} — ${(file.size / 1024).toFixed(1)}KB]`;
 }
 
-app.post('/api/analyze', upload.array('files', 10), async (req, res) => {
+app.post('/api/analyze', requireSession, upload.array('files', 10), async (req, res) => {
   try {
     const pasteText = req.body.paste || '';
     const questions = JSON.parse(req.body.questions || '[]');
@@ -47,7 +101,7 @@ app.post('/api/analyze', upload.array('files', 10), async (req, res) => {
   }
 });
 
-app.post('/api/chat', async (req, res) => {
+app.post('/api/chat', requireSession, async (req, res) => {
   try {
     const { messages } = req.body;
     const msg = await anthropic.messages.create({
@@ -64,6 +118,13 @@ app.post('/api/chat', async (req, res) => {
 });
 
 app.get('/health', (_, res) => res.json({ status: 'ok' }));
+
+// ── 루트: ?client= 없으면 /admin 으로 리다이렉트 ──
+app.get('/', (req, res) => {
+  if (!req.query.client) return res.redirect('/admin?pw=');
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 app.get('*', (_, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
 const PORT = process.env.PORT || 3000;

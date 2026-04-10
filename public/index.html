@@ -542,6 +542,27 @@ textarea.setup-input::placeholder{color:var(--muted);}
 
 <script>
 // ─────────────────────────────────────────
+//  CLIENT SESSION
+// ─────────────────────────────────────────
+const __params = new URLSearchParams(window.location.search);
+const __clientId = __params.get('client') || localStorage.getItem('spendit_client_id');
+
+if (!__clientId) {
+  document.addEventListener('DOMContentLoaded', () => {
+    document.body.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;background:#F5F7FC;">
+        <div style="text-align:center;padding:40px;background:#fff;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,.08);">
+          <div style="font-size:40px;margin-bottom:16px;">🔒</div>
+          <h2 style="color:#1A1F2E;margin-bottom:8px;">유효하지 않은 링크입니다</h2>
+          <p style="color:#8C93A8;font-size:14px;">담당 세일즈 매니저에게 전용 링크를 요청해주세요.</p>
+        </div>
+      </div>`;
+  });
+} else {
+  localStorage.setItem('spendit_client_id', __clientId);
+}
+
+// ─────────────────────────────────────────
 //  DISCOVERY QUESTIONS (from template PDF)
 // ─────────────────────────────────────────
 const SECTIONS = [
@@ -722,6 +743,7 @@ async function runAnalysis() {
   try {
     const res = await fetch('/api/analyze', {
       method: 'POST',
+      headers: { 'x-client-id': __clientId || '' },
       body: formData
     });
     const data = await res.json();
@@ -1005,7 +1027,7 @@ ${summary}
   try {
     const res = await fetch('/api/chat', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-client-id': __clientId || '' },
       body: JSON.stringify({ messages: setupMessages })
     });
     const data = await res.json();
@@ -1066,7 +1088,7 @@ async function sendSetupMsg() {
   try {
     const res = await fetch('/api/chat', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-client-id': __clientId || '' },
       body: JSON.stringify({ messages: setupMessages })
     });
     const data = await res.json();

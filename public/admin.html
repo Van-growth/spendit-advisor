@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spendit Advisor — 관리자</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, 'Pretendard', sans-serif; background: #F5F7FC; color: #1A1F2E; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 40px 16px; }
+
+.card { background: #fff; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,.07); padding: 36px; width: 100%; max-width: 560px; }
+
+.logo { display: flex; align-items: center; gap: 10px; margin-bottom: 28px; }
+.logo-mark { width: 32px; height: 32px; background: #1455FF; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 14px; font-weight: 800; }
+.logo-text { font-size: 15px; font-weight: 700; color: #060E2B; }
+.logo-sub { font-size: 12px; color: #8C93A8; margin-left: 4px; }
+
+h2 { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+.desc { font-size: 13px; color: #8C93A8; margin-bottom: 24px; }
+
+label { font-size: 12px; font-weight: 600; color: #4B5368; display: block; margin-bottom: 6px; }
+input[type=text] {
+  width: 100%; padding: 10px 14px; border: 1px solid #E2E6F0; border-radius: 8px;
+  font-size: 14px; font-family: inherit; outline: none; transition: border-color .15s;
+}
+input[type=text]:focus { border-color: #1455FF; }
+
+.btn {
+  margin-top: 14px; width: 100%; padding: 11px; border: none; border-radius: 8px;
+  background: #1455FF; color: #fff; font-size: 14px; font-weight: 600;
+  font-family: inherit; cursor: pointer; transition: background .15s;
+}
+.btn:hover { background: #0D40CC; }
+.btn:disabled { background: #B0BFFF; cursor: not-allowed; }
+
+.result-box {
+  margin-top: 20px; padding: 14px 16px; background: #EAF0FF; border-radius: 10px;
+  border: 1px solid #C5D3FF; display: none;
+}
+.result-label { font-size: 11px; font-weight: 700; color: #1455FF; margin-bottom: 6px; letter-spacing: .05em; text-transform: uppercase; }
+.result-url { font-size: 13px; color: #1A1F2E; word-break: break-all; margin-bottom: 10px; font-family: 'DM Mono', monospace; }
+.copy-btn {
+  padding: 6px 14px; border-radius: 6px; border: 1px solid #1455FF;
+  background: #fff; color: #1455FF; font-size: 12px; font-weight: 600;
+  cursor: pointer; font-family: inherit; transition: all .15s;
+}
+.copy-btn:hover { background: #1455FF; color: #fff; }
+
+.divider { border: none; border-top: 1px solid #E2E6F0; margin: 28px 0; }
+
+.session-list { display: flex; flex-direction: column; gap: 8px; }
+.session-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px; background: #F5F7FC; border-radius: 8px; font-size: 13px;
+}
+.session-company { font-weight: 600; color: #1A1F2E; }
+.session-id { font-size: 11px; color: #8C93A8; font-family: monospace; margin-top: 2px; }
+.session-copy { font-size: 11px; color: #1455FF; cursor: pointer; font-weight: 600; white-space: nowrap; margin-left: 12px; }
+.session-copy:hover { text-decoration: underline; }
+.empty { font-size: 13px; color: #8C93A8; text-align: center; padding: 12px; }
+
+.toast {
+  position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+  background: #060E2B; color: #fff; padding: 10px 20px; border-radius: 8px;
+  font-size: 13px; opacity: 0; transition: opacity .2s; pointer-events: none; white-space: nowrap;
+}
+.toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="logo">
+    <div class="logo-mark">S</div>
+    <span class="logo-text">Spendit Advisor</span>
+    <span class="logo-sub">관리자</span>
+  </div>
+
+  <h2>고객사 세션 링크 생성</h2>
+  <p class="desc">고객사별 전용 링크를 생성하세요. 링크가 있어야만 어드바이저에 접속할 수 있습니다.</p>
+
+  <label for="companyInput">회사명</label>
+  <input type="text" id="companyInput" placeholder="예: 솔로몬테크, ABC Corp" maxlength="50" />
+  <button class="btn" id="createBtn" onclick="createSession()">링크 생성</button>
+
+  <div class="result-box" id="resultBox">
+    <div class="result-label">생성된 링크</div>
+    <div class="result-url" id="resultUrl"></div>
+    <button class="copy-btn" onclick="copyUrl()">링크 복사</button>
+  </div>
+
+  <hr class="divider">
+
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+    <span style="font-size:13px;font-weight:700;">생성된 링크 목록</span>
+    <button onclick="loadSessions()" style="font-size:11px;color:#1455FF;background:none;border:none;cursor:pointer;font-weight:600;">새로고침</button>
+  </div>
+  <div class="session-list" id="sessionList"><div class="empty">아직 생성된 세션이 없습니다.</div></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const pw = new URLSearchParams(location.search).get('pw') || '';
+const base = location.origin;
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+async function createSession() {
+  const company = document.getElementById('companyInput').value.trim();
+  if (!company) { showToast('회사명을 입력해주세요'); return; }
+
+  const btn = document.getElementById('createBtn');
+  btn.disabled = true; btn.textContent = '생성 중...';
+
+  try {
+    const res = await fetch('/api/create-session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-pw': pw },
+      body: JSON.stringify({ company })
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+
+    const url = `${base}/?client=${data.clientId}`;
+    document.getElementById('resultUrl').textContent = url;
+    document.getElementById('resultBox').style.display = 'block';
+    document.getElementById('companyInput').value = '';
+    loadSessions();
+  } catch (e) {
+    showToast('오류: ' + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = '링크 생성';
+  }
+}
+
+function copyUrl(url) {
+  const u = url || document.getElementById('resultUrl').textContent;
+  navigator.clipboard.writeText(u).then(() => showToast('링크가 복사되었습니다!'));
+}
+
+async function loadSessions() {
+  try {
+    const res = await fetch(`/api/sessions?pw=${encodeURIComponent(pw)}`);
+    const data = await res.json();
+    const list = document.getElementById('sessionList');
+    if (!data.ok || !data.sessions.length) {
+      list.innerHTML = '<div class="empty">아직 생성된 세션이 없습니다.</div>';
+      return;
+    }
+    list.innerHTML = data.sessions.slice().reverse().map(s => {
+      const url = `${base}/?client=${s.clientId}`;
+      const date = new Date(s.createdAt).toLocaleString('ko-KR', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' });
+      return `
+        <div class="session-item">
+          <div>
+            <div class="session-company">${s.company}</div>
+            <div class="session-id">${s.clientId} · ${date}</div>
+          </div>
+          <span class="session-copy" onclick="copyUrl('${url}')">복사</span>
+        </div>`;
+    }).join('');
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+document.getElementById('companyInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') createSession();
+});
+
+loadSessions();
+</script>
+</body>
+</html>
