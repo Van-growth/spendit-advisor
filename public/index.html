@@ -209,9 +209,18 @@ textarea.paste::placeholder{color:var(--muted);}
 .thread{padding:0 16px 0;}
 .thread-comment{
   display:flex;gap:10px;padding:10px 0;
-  border-top:1px solid var(--border);
+  border-top:1px solid var(--border);position:relative;
 }
 .thread-comment:first-child{border-top:1px solid var(--border);}
+.t-del{
+  position:absolute;top:10px;right:0;
+  width:18px;height:18px;border-radius:4px;border:none;
+  background:transparent;color:var(--muted);font-size:13px;line-height:1;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  opacity:0;transition:opacity .12s,background .12s;padding:0;
+}
+.thread-comment:hover .t-del{opacity:1;}
+.t-del:hover{background:var(--red-dim);color:var(--red);}
 .t-avatar{
   width:26px;height:26px;border-radius:6px;
   display:flex;align-items:center;justify-content:center;
@@ -828,7 +837,7 @@ function renderQCard(q) {
     </div>
 
     <div class="thread" id="thread-${q.id}">
-      ${threads[q.id].map(c => renderComment(c)).join('')}
+      ${threads[q.id].map((c, i) => renderComment(c, q.id, i)).join('')}
     </div>
 
     <div class="q-input-row">
@@ -852,7 +861,7 @@ function renderQCard(q) {
   return card;
 }
 
-function renderComment(c) {
+function renderComment(c, qid, index) {
   const isCustomer = c.role === 'customer';
   return `
     <div class="thread-comment">
@@ -865,7 +874,16 @@ function renderComment(c) {
         </div>
         <div class="t-body">${c.body}</div>
       </div>
+      <button class="t-del" title="댓글 삭제" onclick="deleteComment('${qid}',${index})">×</button>
     </div>`;
+}
+
+function deleteComment(qid, index) {
+  threads[qid].splice(index, 1);
+  const card = document.getElementById(`card-${qid}`);
+  const q = findQ(qid);
+  if (card && q) card.replaceWith(renderQCard(q));
+  updateProgress();
 }
 
 function formatDraft(text) {
