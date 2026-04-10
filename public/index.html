@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spendit Discovery Reviewer</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+
+:root {
+  --blue:#1455FF; --blue-dim:#EAF0FF; --blue-mid:#4B8AFF;
+  --navy:#060E2B; --ink:#1A1F2E; --mid:#4B5368; --muted:#8C93A8;
+  --border:#E2E6F0; --bg:#F5F7FC; --white:#FFFFFF;
+  --green:#00C48C; --green-dim:#E6FAF5;
+  --amber:#F59E0B; --amber-dim:#FFF8E6;
+  --red:#EF4444; --red-dim:#FFF0F0;
+  --purple:#7C3AED; --purple-dim:#F3EDFF;
+  --spendit-blue:#1B6FFF;
+  --customer-teal:#0D9488;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;overflow:hidden;}
+body{font-family:'Pretendard',-apple-system,sans-serif;background:var(--bg);color:var(--ink);display:flex;flex-direction:column;}
+
+/* ── TOPBAR ── */
+.topbar{
+  height:52px;background:var(--white);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 20px;gap:12px;flex-shrink:0;z-index:50;
+}
+.logo{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:var(--navy);}
+.logo-mark{width:26px;height:26px;background:var(--blue);border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:800;}
+.topbar-div{width:1px;height:20px;background:var(--border);}
+.topbar-sub{font-size:12px;color:var(--muted);}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
+.customer-chip{font-size:11px;padding:3px 12px;border-radius:20px;background:var(--blue-dim);color:var(--blue);font-weight:600;border:1px solid #c5d3ff;}
+.new-btn{font-size:11px;padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:var(--white);color:var(--mid);cursor:pointer;font-family:inherit;transition:all .15s;}
+.new-btn:hover{background:var(--navy);color:#fff;border-color:var(--navy);}
+
+/* ── PHASE TAB ── */
+.phase-bar{
+  background:var(--white);border-bottom:1px solid var(--border);
+  padding:0 20px;display:flex;align-items:center;gap:0;flex-shrink:0;height:44px;
+}
+.phase-tab{
+  display:flex;align-items:center;gap:7px;padding:0 18px;height:100%;
+  font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;
+  border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap;
+}
+.phase-tab:hover{color:var(--ink);}
+.phase-tab.active{color:var(--blue);border-bottom-color:var(--blue);}
+.phase-tab.done{color:var(--green);}
+.phase-tab .tab-badge{
+  width:18px;height:18px;border-radius:50%;background:var(--border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:9px;font-weight:800;color:var(--white);
+}
+.phase-tab.active .tab-badge{background:var(--blue);}
+.phase-tab.done .tab-badge{background:var(--green);}
+.phase-sep{color:var(--border);padding:0 2px;font-size:14px;}
+
+/* ── LAYOUT ── */
+.layout{display:flex;flex:1;overflow:hidden;}
+
+/* ── SIDEBAR ── */
+.sidebar{
+  width:220px;background:var(--white);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;
+}
+.sb-sec{padding:14px 14px;border-bottom:1px solid var(--border);}
+.sb-label{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
+.sb-customer-box{background:var(--bg);border-radius:10px;padding:11px;}
+.sb-customer-name{font-size:13px;font-weight:700;color:var(--navy);margin-bottom:1px;}
+.sb-customer-meta{font-size:11px;color:var(--muted);line-height:1.5;}
+.sb-customer-empty{font-size:12px;color:var(--muted);text-align:center;padding:8px 0;font-style:italic;}
+
+/* Progress ring */
+.prog-row{display:flex;align-items:center;gap:10px;}
+.prog-ring{width:40px;height:40px;flex-shrink:0;}
+.prog-ring-text{font-size:10px;font-weight:700;fill:var(--blue);}
+.prog-detail{font-size:11px;color:var(--muted);line-height:1.6;}
+.prog-detail strong{color:var(--ink);font-size:12px;}
+
+/* Nav list */
+.nav-item{
+  display:flex;align-items:center;gap:8px;padding:7px 10px;
+  border-radius:7px;font-size:12px;color:var(--mid);cursor:pointer;
+  transition:all .12s;margin-bottom:2px;
+}
+.nav-item:hover{background:var(--bg);}
+.nav-item.active{background:var(--blue-dim);color:var(--blue);font-weight:600;}
+.nav-item .nav-dot{width:6px;height:6px;border-radius:50%;background:var(--border);flex-shrink:0;}
+.nav-item.confirmed .nav-dot{background:var(--green);}
+.nav-item.active .nav-dot{background:var(--blue);}
+.nav-item .nav-count{margin-left:auto;font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);}
+
+/* ── PANELS ── */
+.panel{display:none;flex:1;flex-direction:column;overflow:hidden;}
+.panel.active{display:flex;}
+
+/* ── UPLOAD PANEL ── */
+.upload-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:32px;overflow-y:auto;}
+.upload-card{max-width:540px;width:100%;}
+.upload-h{font-size:24px;font-weight:700;color:var(--navy);letter-spacing:-.4px;margin-bottom:6px;}
+.upload-sub{font-size:13px;color:var(--muted);margin-bottom:24px;line-height:1.6;}
+
+/* Flow steps */
+.flow{display:flex;gap:0;margin-bottom:24px;}
+.flow-s{
+  flex:1;background:var(--white);border:1px solid var(--border);
+  border-right:none;padding:9px 11px;
+}
+.flow-s:first-child{border-radius:8px 0 0 8px;}
+.flow-s:last-child{border-right:1px solid var(--border);border-radius:0 8px 8px 0;}
+.flow-n{font-size:9px;color:var(--muted);font-weight:700;margin-bottom:2px;text-transform:uppercase;}
+.flow-t{font-size:11px;color:var(--ink);font-weight:500;}
+
+.drop-zone{
+  border:2px dashed var(--border);border-radius:14px;padding:32px 24px;
+  text-align:center;cursor:pointer;transition:all .2s;background:var(--white);margin-bottom:12px;
+}
+.drop-zone:hover,.drop-zone.on{border-color:var(--blue);background:var(--blue-dim);}
+.drop-icon{font-size:30px;margin-bottom:8px;}
+.drop-t{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:3px;}
+.drop-h{font-size:12px;color:var(--muted);}
+.fmts{display:flex;justify-content:center;gap:5px;margin-top:10px;flex-wrap:wrap;}
+.fmt{font-size:10px;font-family:'DM Mono',monospace;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 6px;color:var(--mid);}
+
+.file-list{display:none;flex-direction:column;gap:5px;margin-bottom:12px;}
+.file-item{display:flex;align-items:center;gap:8px;background:var(--white);border:1px solid var(--border);border-radius:8px;padding:7px 10px;}
+.file-name{flex:1;font-size:12px;font-weight:500;}
+.file-sz{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;}
+.file-rm{background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;}
+.file-rm:hover{color:var(--red);}
+
+.or-div{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:12px;margin:10px 0;}
+.or-div::before,.or-div::after{content:'';flex:1;height:1px;background:var(--border);}
+
+.paste-box{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:13px;margin-bottom:12px;}
+.paste-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:7px;}
+textarea.paste{width:100%;border:none;outline:none;font-family:inherit;font-size:13px;color:var(--ink);resize:none;min-height:70px;background:transparent;}
+textarea.paste::placeholder{color:var(--muted);}
+
+.go-btn{
+  width:100%;padding:13px;background:var(--blue);color:#fff;border:none;
+  border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;
+  display:flex;align-items:center;justify-content:center;gap:8px;transition:all .15s;
+}
+.go-btn:hover{background:#0040DD;transform:translateY(-1px);}
+.go-btn:disabled{background:var(--border);color:var(--muted);cursor:not-allowed;transform:none;}
+
+/* ── DISCOVERY PANEL ── */
+.disc-wrap{flex:1;overflow-y:auto;padding:0;}
+
+/* Section header */
+.disc-section-hdr{
+  position:sticky;top:0;background:var(--bg);
+  padding:10px 24px 8px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:10px;z-index:10;
+}
+.section-emoji{font-size:16px;}
+.section-title{font-size:13px;font-weight:700;color:var(--navy);}
+.section-progress{margin-left:auto;font-size:11px;color:var(--muted);}
+
+/* Question card — Notion-ish */
+.q-card{
+  background:var(--white);margin:0 24px 12px;
+  border:1px solid var(--border);border-radius:12px;
+  overflow:hidden;transition:box-shadow .15s;
+}
+.q-card:first-of-type{margin-top:16px;}
+.q-card:last-of-type{margin-bottom:24px;}
+.q-card:hover{box-shadow:0 2px 12px rgba(20,85,255,.06);}
+.q-card.confirmed{border-color:var(--green);border-left:3px solid var(--green);}
+.q-card.has-comment{border-color:#c5d3ff;}
+
+/* Q header */
+.q-head{padding:14px 16px 12px;cursor:pointer;display:flex;align-items:flex-start;gap:10px;}
+.q-num{
+  font-size:10px;font-weight:700;font-family:'DM Mono',monospace;
+  color:var(--muted);padding-top:1px;min-width:28px;
+}
+.q-main{flex:1;}
+.q-text{font-size:13px;font-weight:600;color:var(--ink);line-height:1.5;margin-bottom:8px;}
+.q-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;}
+.q-badge.필수{background:var(--red-dim);color:var(--red);}
+.q-badge.권장{background:var(--amber-dim);color:#B45309;}
+.q-badge.선택{background:var(--bg);color:var(--muted);}
+
+/* AI draft answer */
+.ai-answer{
+  margin:0 16px;padding:10px 12px;
+  background:var(--blue-dim);border-radius:8px;
+  border-left:3px solid var(--blue);margin-bottom:10px;
+}
+.ai-answer-head{
+  display:flex;align-items:center;gap:6px;
+  font-size:10px;font-weight:700;color:var(--blue);
+  margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em;
+}
+.ai-avatar{
+  width:16px;height:16px;border-radius:4px;background:var(--blue);
+  display:flex;align-items:center;justify-content:center;color:#fff;font-size:8px;font-weight:800;
+}
+.ai-answer-text{font-size:12.5px;color:var(--mid);line-height:1.65;}
+.ai-answer-text em{color:var(--amber);font-style:normal;font-weight:600;}  /* 확인필요 */
+
+/* Thread */
+.thread{padding:0 16px 0;}
+.thread-comment{
+  display:flex;gap:10px;padding:10px 0;
+  border-top:1px solid var(--border);
+}
+.thread-comment:first-child{border-top:1px solid var(--border);}
+.t-avatar{
+  width:26px;height:26px;border-radius:6px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px;
+}
+.t-avatar.spendit{background:var(--blue-dim);color:var(--blue);}
+.t-avatar.customer{background:var(--green-dim);color:var(--customer-teal);}
+.t-right{flex:1;}
+.t-meta{display:flex;align-items:center;gap:6px;margin-bottom:3px;}
+.t-name{font-size:11px;font-weight:700;color:var(--ink);}
+.t-role{font-size:10px;color:var(--muted);}
+.t-time{font-size:10px;color:var(--muted);margin-left:auto;}
+.t-body{font-size:12.5px;color:var(--mid);line-height:1.6;}
+.t-body strong{color:var(--ink);}
+
+/* Comment input */
+.q-input-row{
+  display:flex;gap:8px;align-items:flex-end;
+  padding:10px 16px;border-top:1px dashed var(--border);
+}
+.q-input-avatar{
+  width:26px;height:26px;border-radius:6px;background:var(--bg);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;color:var(--mid);flex-shrink:0;
+}
+textarea.q-input{
+  flex:1;border:1px solid var(--border);border-radius:8px;
+  padding:7px 10px;font-size:12.5px;font-family:inherit;
+  resize:none;min-height:34px;max-height:90px;outline:none;
+  background:var(--bg);color:var(--ink);transition:border-color .15s;
+}
+textarea.q-input:focus{border-color:var(--blue);background:#fff;}
+textarea.q-input::placeholder{color:var(--muted);}
+.q-send-btn{
+  padding:6px 12px;background:var(--blue);color:#fff;border:none;
+  border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;
+  transition:background .15s;white-space:nowrap;flex-shrink:0;
+}
+.q-send-btn:hover{background:#0040DD;}
+
+/* Confirm button */
+.q-actions{
+  padding:8px 16px 12px;display:flex;align-items:center;gap:8px;
+}
+.confirm-btn{
+  font-size:11px;font-weight:600;padding:5px 14px;border-radius:20px;
+  border:1.5px solid var(--green);color:var(--green);background:var(--white);
+  cursor:pointer;font-family:inherit;transition:all .15s;display:flex;align-items:center;gap:5px;
+}
+.confirm-btn:hover{background:var(--green);color:#fff;}
+.confirm-btn.confirmed{background:var(--green);color:#fff;}
+.q-card-status{font-size:11px;color:var(--muted);margin-left:auto;}
+.comment-count{
+  font-size:11px;color:var(--muted);
+  display:flex;align-items:center;gap:4px;
+}
+
+/* ── SETUP PANEL ── */
+.setup-wrap{flex:1;overflow-y:auto;padding:24px;}
+.setup-locked{
+  flex:1;display:flex;align-items:center;justify-content:center;
+  flex-direction:column;gap:12px;padding:40px;text-align:center;
+}
+.setup-locked-icon{font-size:40px;}
+.setup-locked-t{font-size:16px;font-weight:600;color:var(--navy);}
+.setup-locked-s{font-size:13px;color:var(--muted);max-width:320px;line-height:1.6;}
+.unlock-btn{
+  margin-top:8px;padding:10px 24px;background:var(--blue);color:#fff;
+  border:none;border-radius:10px;font-size:13px;font-weight:600;
+  cursor:pointer;font-family:inherit;transition:all .15s;
+}
+.unlock-btn:hover{background:#0040DD;}
+
+/* Setup guide card */
+.setup-guide-card{
+  background:var(--white);border:1px solid var(--border);border-radius:14px;
+  overflow:hidden;animation:fadeUp .3s ease;margin-bottom:16px;
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+.setup-guide-header{
+  background:linear-gradient(135deg,var(--navy) 0%,#1B3D8F 100%);
+  padding:18px 22px;color:#fff;
+}
+.setup-guide-title{font-size:16px;font-weight:700;margin-bottom:3px;}
+.setup-guide-sub{font-size:12px;opacity:.72;}
+.setup-guide-body{padding:20px 22px;}
+
+.step-block{
+  padding:12px 14px;border:1px solid var(--border);border-radius:10px;
+  margin-bottom:10px;background:var(--bg);
+}
+.step-block-head{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.sb-num{
+  width:22px;height:22px;background:var(--blue);color:#fff;
+  border-radius:6px;display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:800;flex-shrink:0;
+}
+.sb-title{font-size:13px;font-weight:700;color:var(--navy);}
+.sb-prio{
+  margin-left:auto;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;
+}
+.sb-prio.필수{background:var(--red-dim);color:var(--red);}
+.sb-prio.권장{background:var(--amber-dim);color:#B45309;}
+.sb-prio.선택{background:var(--green-dim);color:var(--customer-teal);}
+.step-block-body{font-size:12px;color:var(--mid);line-height:1.7;}
+.step-block-body strong{color:var(--ink);}
+.step-block-body code{
+  font-family:'DM Mono',monospace;background:#fff;border:1px solid var(--border);
+  border-radius:4px;padding:1px 5px;font-size:11px;color:var(--blue);
+}
+.step-block-body ul{padding-left:14px;margin:4px 0;}
+.step-block-body li{margin:2px 0;}
+
+/* chat follow-up */
+.setup-chat{flex:1;overflow-y:auto;padding:16px 22px;display:flex;flex-direction:column;gap:12px;}
+.setup-msg{display:flex;gap:9px;animation:fadeUp .2s ease;}
+.setup-msg.user{flex-direction:row-reverse;}
+.setup-av{
+  width:28px;height:28px;border-radius:7px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;flex-shrink:0;
+}
+.setup-av.ai{background:var(--blue);color:#fff;}
+.setup-av.user{background:var(--navy);color:#fff;}
+.setup-bubble{
+  max-width:68%;background:var(--white);border:1px solid var(--border);
+  border-radius:11px;padding:10px 13px;font-size:13px;line-height:1.65;
+}
+.setup-msg.user .setup-bubble{background:var(--blue);color:#fff;border-color:var(--blue);}
+.setup-bubble strong{font-weight:600;}
+.setup-bubble code{
+  font-family:'DM Mono',monospace;background:var(--blue-dim);
+  color:var(--blue);border-radius:4px;padding:1px 5px;font-size:11.5px;
+}
+.setup-input-bar{border-top:1px solid var(--border);padding:11px 20px 14px;background:var(--white);}
+.setup-input-row{display:flex;gap:8px;align-items:flex-end;}
+textarea.setup-input{
+  flex:1;border:1px solid var(--border);border-radius:9px;
+  padding:9px 12px;font-size:13px;font-family:inherit;
+  resize:none;min-height:38px;max-height:100px;outline:none;
+  background:var(--bg);color:var(--ink);transition:border-color .15s;
+}
+textarea.setup-input:focus{border-color:var(--blue);background:#fff;}
+textarea.setup-input::placeholder{color:var(--muted);}
+.setup-send{
+  width:38px;height:38px;background:var(--blue);border:none;border-radius:9px;
+  color:#fff;font-size:15px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:all .15s;
+}
+.setup-send:hover{background:#0040DD;}
+.setup-send:disabled{background:var(--border);cursor:not-allowed;}
+
+/* loading overlay */
+.overlay{
+  display:none;position:fixed;inset:0;
+  background:rgba(6,14,43,.55);backdrop-filter:blur(3px);
+  z-index:200;align-items:center;justify-content:center;flex-direction:column;gap:14px;
+}
+.overlay.show{display:flex;}
+.spinner{
+  width:42px;height:42px;border:3px solid rgba(255,255,255,.2);
+  border-top-color:#fff;border-radius:50%;animation:spin 1s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+.overlay-text{color:#fff;font-size:13px;font-weight:500;}
+
+.typing-dots{display:flex;gap:4px;padding:8px 2px;align-items:center;}
+.typing-dots span{
+  width:5px;height:5px;border-radius:50%;background:var(--blue);opacity:.5;
+  animation:bounce 1.1s infinite;
+}
+.typing-dots span:nth-child(2){animation-delay:.18s;}
+.typing-dots span:nth-child(3){animation-delay:.36s;}
+@keyframes bounce{0%,60%,100%{transform:translateY(0);}30%{transform:translateY(-5px);}}
+
+#fileInput{display:none;}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="logo">
+    <div class="logo-mark">S</div>
+    Spendit Discovery
+  </div>
+  <div class="topbar-div"></div>
+  <span class="topbar-sub">고객사 자료 → 디스커버리 검토 → 세팅 가이드</span>
+  <div class="topbar-right">
+    <span class="customer-chip" id="custChip">—</span>
+    <button class="new-btn" onclick="location.reload()">+ 새 고객사</button>
+  </div>
+</div>
+
+<!-- PHASE TABS -->
+<div class="phase-bar">
+  <div class="phase-tab active" id="tab1" onclick="switchTab(1)">
+    <span class="tab-badge">1</span> 자료 업로드
+  </div>
+  <span class="phase-sep">›</span>
+  <div class="phase-tab" id="tab2" onclick="switchTab(2)">
+    <span class="tab-badge">2</span> 디스커버리 검토
+  </div>
+  <span class="phase-sep">›</span>
+  <div class="phase-tab" id="tab3" onclick="switchTab(3)">
+    <span class="tab-badge">3</span> 세팅 가이드
+  </div>
+</div>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sb-sec">
+      <div class="sb-label">고객사</div>
+      <div class="sb-customer-box" id="sbCustomer">
+        <div class="sb-customer-empty">자료 업로드 후<br>자동 분석됩니다</div>
+      </div>
+    </div>
+
+    <div class="sb-sec">
+      <div class="sb-label">디스커버리 진행률</div>
+      <div class="prog-row">
+        <svg class="prog-ring" viewBox="0 0 40 40">
+          <circle cx="20" cy="20" r="16" fill="none" stroke="#E2E6F0" stroke-width="3"/>
+          <circle id="progCircle" cx="20" cy="20" r="16" fill="none" stroke="#1455FF" stroke-width="3"
+            stroke-dasharray="100.5" stroke-dashoffset="100.5" stroke-linecap="round"
+            transform="rotate(-90 20 20)" style="transition:stroke-dashoffset .4s"/>
+          <text x="20" y="24" text-anchor="middle" class="prog-ring-text" id="progNum">0%</text>
+        </svg>
+        <div class="prog-detail">
+          <strong id="progConfirmed">0 / 0</strong> 확정<br>
+          <span id="progPending">전체 0개 질문</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="sb-sec" style="flex:1;overflow-y:auto;border-bottom:none;">
+      <div class="sb-label">섹션 바로가기</div>
+      <div id="sectionNav"></div>
+    </div>
+  </div>
+
+  <!-- PANELS -->
+
+  <!-- 1. UPLOAD -->
+  <div class="panel active" id="panel1">
+    <div class="upload-wrap">
+      <div class="upload-card">
+        <div class="upload-h">고객사 자료를 올려주세요</div>
+        <div class="upload-sub">경비규정, 비용항목 목록, 기존 정산 데이터 등을 업로드하면<br>디스커버리 미팅 질문에 대한 초안 답변을 자동으로 생성합니다.</div>
+
+        <div class="flow">
+          <div class="flow-s"><div class="flow-n">Step 1</div><div class="flow-t">자료 업로드</div></div>
+          <div class="flow-s"><div class="flow-n">Step 2</div><div class="flow-t">AI 초안 생성</div></div>
+          <div class="flow-s"><div class="flow-n">Step 3</div><div class="flow-t">고객사 검토·댓글</div></div>
+          <div class="flow-s"><div class="flow-n">Step 4</div><div class="flow-t">세팅 가이드</div></div>
+        </div>
+
+        <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+          <div class="drop-icon">📂</div>
+          <div class="drop-t">파일을 드래그하거나 클릭해서 업로드</div>
+          <div class="drop-h">여러 파일 동시 가능</div>
+          <div class="fmts">
+            <span class="fmt">PDF</span><span class="fmt">XLSX</span>
+            <span class="fmt">CSV</span><span class="fmt">TXT</span><span class="fmt">DOCX</span>
+          </div>
+        </div>
+        <input type="file" id="fileInput" multiple accept=".pdf,.xlsx,.xls,.csv,.txt,.docx,.pptx" onchange="handleFiles(this.files)">
+
+        <div class="file-list" id="fileList"></div>
+
+        <div class="or-div">또는</div>
+
+        <div class="paste-box">
+          <div class="paste-lbl">텍스트로 직접 입력</div>
+          <textarea class="paste" id="pasteArea" rows="4"
+            placeholder="경비 규정 내용, 비용항목 목록, 고객사 특이사항 등을 붙여넣거나 직접 입력하세요..."
+            oninput="checkReady()"></textarea>
+        </div>
+
+        <button class="go-btn" id="goBtn" onclick="runAnalysis()" disabled>
+          <span>🔍</span> 디스커버리 초안 생성하기
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. DISCOVERY -->
+  <div class="panel" id="panel2">
+    <div class="disc-wrap" id="discWrap">
+      <!-- rendered by JS -->
+    </div>
+  </div>
+
+  <!-- 3. SETUP -->
+  <div class="panel" id="panel3">
+    <!-- locked state -->
+    <div class="setup-locked" id="setupLocked">
+      <div class="setup-locked-icon">🔒</div>
+      <div class="setup-locked-t">디스커버리 검토 완료 후 열립니다</div>
+      <div class="setup-locked-s">디스커버리 질문의 50% 이상을 확정하거나<br>아래 버튼으로 바로 생성할 수 있습니다.</div>
+      <button class="unlock-btn" onclick="generateSetup()">지금 세팅 가이드 생성하기</button>
+    </div>
+    <!-- guide + chat (hidden until generated) -->
+    <div id="setupContent" style="display:none;flex:1;flex-direction:column;overflow:hidden;">
+      <div class="setup-chat" id="setupChat"></div>
+      <div class="setup-input-bar">
+        <div class="setup-input-row">
+          <textarea class="setup-input" id="setupInput"
+            placeholder="추가 질문이나 특이사항을 입력하세요..."
+            rows="1"
+            onkeydown="handleSetupKey(event)"
+            oninput="autoResize(this)"></textarea>
+          <button class="setup-send" id="setupSend" onclick="sendSetupMsg()">↑</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- OVERLAY -->
+<div class="overlay" id="overlay">
+  <div class="spinner"></div>
+  <div class="overlay-text" id="overlayText">분석 중...</div>
+</div>
+
+<script>
+// ─────────────────────────────────────────
+//  DISCOVERY QUESTIONS (from template PDF)
+// ─────────────────────────────────────────
+const SECTIONS = [
+  {
+    id:'s1', emoji:'✍️', title:'지출 결의 및 정산 프로세스',
+    questions:[
+      {id:'q1_1', text:'결의서는 어떤 단위로 제출되나요?', priority:'필수'},
+      {id:'q1_2', text:'결의서 제출 기준은 무엇인가요? (결제일/청구일/회계마감 기준 등)', priority:'필수'},
+      {id:'q1_3', text:'결의서에 포함되는 지출 유형을 모두 알려주세요. (현금/법인카드/세금계산서/인보이스/선지급금/기타)', priority:'필수'},
+      {id:'q1_4', text:'지출 결의서 제출 방법은 어떻게 되나요? (전자결재/엑셀업로드/이메일 등)', priority:'필수'},
+      {id:'q1_5', text:'현재 사용 중인 결재/인사 시스템은 무엇인가요? (플렉스/그룹웨어/자체개발 등)', priority:'필수'},
+      {id:'q1_6', text:'결의서 결재선은 어떻게 설정되어 있나요?', priority:'필수'},
+      {id:'q1_7', text:'품의 결재와 지출 결의 결재는 별도로 존재하나요?', priority:'권장'},
+      {id:'q1_8', text:'결재 승인 이후 회계 반영은 자동으로 이뤄지나요?', priority:'권장'},
+      {id:'q1_9', text:'승인 완료 후 회계팀에서 추가 검토를 진행하시나요?', priority:'권장'},
+    ]
+  },
+  {
+    id:'s2', emoji:'🧾', title:'증빙 처리 (영수증, 세금계산서 등)',
+    questions:[
+      {id:'q2_1', text:'영수증은 어떻게 취합하시나요? (자동수집/임직원 직접 제출/별도 취합 없음/기타)', priority:'필수'},
+      {id:'q2_2', text:'증빙 누락건은 어떻게 처리되나요? (결의서 반려/보완 요청 후 승인/추후 별도 제출 허용/기타)', priority:'필수'},
+      {id:'q2_3', text:'증빙 불일치(금액·날짜 등) 발생 시 처리 기준은 어떻게 되나요?', priority:'권장'},
+      {id:'q2_4', text:'영수증이 여러 장인 경우(분할 결제 등)는 어떻게 관리되나요?', priority:'권장'},
+      {id:'q2_5', text:'법인카드 데이터 수신 방식: 스크래핑 vs EDI 중 어떤 방식을 희망하시나요?', priority:'필수'},
+      {id:'q2_6', text:'해외 거래가 잦은 편인가요? (카드 해외결제, 해외 인보이스 등)', priority:'필수'},
+      {id:'q2_7', text:'세금계산서는 보통 어떤 단위로 수취하시나요? (개인이메일/팀이메일/혼합)', priority:'권장'},
+      {id:'q2_8', text:'세금계산서/인보이스 등 지급 요청 프로세스를 간략히 설명해주세요.', priority:'권장'},
+      {id:'q2_9', text:'세금계산서 품목별 Cost Center(비용 집계 단위)가 지정되어 있나요?', priority:'권장'},
+      {id:'q2_10', text:'1개의 법인카드/세금계산서에 대해 비용 집계 단위를 나눠야 하는 경우가 있나요?', priority:'선택'},
+    ]
+  },
+  {
+    id:'s3', emoji:'📊', title:'회계 반영 및 전표 처리',
+    questions:[
+      {id:'q3_1', text:'전표 입력은 어떤 방식으로 진행되고 있나요? (회계팀 직접입력/부서담당자/시스템자동생성/기타)', priority:'필수'},
+      {id:'q3_2', text:'수기 기재/업로드 방식인 경우, 기재 주체가 입력하는 범위는 어떻게 되나요?', priority:'권장'},
+      {id:'q3_3', text:'내부 전표 입력 시 사용하는 방식은 무엇인가요? (엑셀업로드/ERP직접입력/CSV/기타)', priority:'필수'},
+      {id:'q3_4', text:'스팬딧-ERP 연계 희망 범위는 어떻게 되나요? (비용전표 자동입력만 / 사원·태그·거래처 등 포함)', priority:'필수'},
+      {id:'q3_5', text:'ERP 반영 주기는 어떻게 되나요? (매일/주1회/월마감/기타)', priority:'필수'},
+      {id:'q3_6', text:'기존의 전표 생성 기준 시점은 어떻게 되나요? (결의승인완료/지급완료/회계팀검토후)', priority:'권장'},
+    ]
+  },
+  {
+    id:'s4', emoji:'🏦', title:'지급 및 마감 처리',
+    questions:[
+      {id:'q4_1', text:'결의 승인 후 실제 지급까지의 절차를 설명해주세요.', priority:'필수'},
+      {id:'q4_2', text:'지급 파일(이체 파일)은 어떤 시스템에서 생성하시나요?', priority:'필수'},
+      {id:'q4_3', text:'마감 시 미결 건(누락, 반려, 지연)은 어떻게 처리되나요?', priority:'권장'},
+      {id:'q4_4', text:'부가세 신고는 현재 어떤 프로세스로 진행하고 계신가요?', priority:'권장'},
+    ]
+  },
+  {
+    id:'s5', emoji:'👥', title:'역할 및 업무 분담',
+    questions:[
+      {id:'q5_1', text:'결재 승인 외에 회계 검토를 수행하는 담당자가 별도로 있나요?', priority:'권장'},
+      {id:'q5_2', text:'규정 위반 검토 시점은 어떻게 되시나요? (결의시점/전표확정시점/둘다)', priority:'권장'},
+      {id:'q5_3', text:'업무를 대신 처리하거나 보조하는 역할(부서 어드민 등)이 있나요?', priority:'선택'},
+    ]
+  },
+  {
+    id:'s6', emoji:'🔖', title:'경비 규정 및 통제',
+    questions:[
+      {id:'q6_1', text:'경비 규정은 어디에 문서화되어 있나요? (인사규정집/회계팀내부문서/공지사항/기타)', priority:'필수'},
+      {id:'q6_2', text:'규정 위반 여부는 현재 어떤 방식으로 검토하시나요? (수기검토/시스템검증/기타)', priority:'필수'},
+      {id:'q6_3', text:'가장 자주 발생하는 규정 위반 유형은 무엇인가요?', priority:'필수'},
+      {id:'q6_4', text:'개선이 필요하다고 생각하는 규정·정책이 있으신가요?', priority:'권장'},
+    ]
+  },
+  {
+    id:'s7', emoji:'⌛', title:'업무 시간 및 어려움',
+    questions:[
+      {id:'q7_1', text:'비용 정산 업무가 회계 전체 업무의 몇 % 정도를 차지하나요?', priority:'권장'},
+      {id:'q7_2', text:'정산 과정에서 가장 어려움을 겪는 단계 2가지를 알려주세요.', priority:'필수'},
+    ]
+  },
+  {
+    id:'s8', emoji:'🚀', title:'스팬딧 도입 기대 효과',
+    questions:[
+      {id:'q8_1', text:'스팬딧 도입 시 가장 기대되는 효과 2가지와 그 배경을 설명해주세요.', priority:'필수'},
+      {id:'q8_2', text:'현재 프로세스에서 자동화나 개선이 가장 필요하다고 느끼는 부분은 무엇인가요?', priority:'필수'},
+      {id:'q8_3', text:'기존 시스템(내부 ERP, 타사 솔루션 등) 사용 시 불편했던 점이 있다면 알려주세요.', priority:'권장'},
+    ]
+  }
+];
+
+// ─────────────────────────────────────────
+//  STATE
+// ─────────────────────────────────────────
+let uploadedFiles = [];
+let customerInfo = { name:'', meta:'' };
+let threads = {};     // qid -> [{role,name,body,time}]
+let confirmed = {};   // qid -> bool
+let aiDrafts = {};    // qid -> string
+let setupMessages = [];
+let isSetupLoading = false;
+let discGenerated = false;
+
+// ─────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────
+function initThreads() {
+  SECTIONS.forEach(s => s.questions.forEach(q => {
+    threads[q.id] = [];
+    confirmed[q.id] = false;
+    aiDrafts[q.id] = '';
+  }));
+}
+initThreads();
+
+function totalQ() { return SECTIONS.reduce((a,s) => a+s.questions.length, 0); }
+function confirmedCount() { return Object.values(confirmed).filter(Boolean).length; }
+
+// ─────────────────────────────────────────
+//  TAB SWITCH
+// ─────────────────────────────────────────
+function switchTab(n) {
+  [1,2,3].forEach(i => {
+    document.getElementById(`tab${i}`).classList.toggle('active', i===n);
+    document.getElementById(`panel${i}`).classList.toggle('active', i===n);
+  });
+}
+
+// ─────────────────────────────────────────
+//  FILE HANDLING
+// ─────────────────────────────────────────
+const dz = document.getElementById('dropZone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('on'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('on'));
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('on'); handleFiles(e.dataTransfer.files); });
+
+function handleFiles(files) {
+  Array.from(files).forEach(f => { if (!uploadedFiles.find(u=>u.name===f.name)) uploadedFiles.push(f); });
+  renderFileList(); checkReady();
+}
+function renderFileList() {
+  const el = document.getElementById('fileList');
+  if (!uploadedFiles.length) { el.style.display='none'; return; }
+  el.style.display='flex';
+  el.innerHTML = uploadedFiles.map((f,i) => `
+    <div class="file-item">
+      <span>${fileIcon(f.name)}</span>
+      <span class="file-name">${f.name}</span>
+      <span class="file-sz">${fmtSz(f.size)}</span>
+      <button class="file-rm" onclick="rmFile(${i})">✕</button>
+    </div>`).join('');
+}
+function rmFile(i) { uploadedFiles.splice(i,1); renderFileList(); checkReady(); }
+function fileIcon(n) { return {pdf:'📄',xlsx:'📊',xls:'📊',csv:'📋',txt:'📝',docx:'📃',pptx:'📑'}[n.split('.').pop().toLowerCase()]||'📁'; }
+function fmtSz(b) { if(b<1024)return b+'B'; if(b<1048576)return(b/1024).toFixed(1)+'KB'; return(b/1048576).toFixed(1)+'MB'; }
+function checkReady() {
+  const ok = uploadedFiles.length > 0 || document.getElementById('pasteArea').value.trim().length > 10;
+  document.getElementById('goBtn').disabled = !ok;
+}
+
+async function readFileText(f) {
+  const ext = f.name.split('.').pop().toLowerCase();
+  if (['txt','csv'].includes(ext)) {
+    return new Promise(r => { const fr=new FileReader(); fr.onload=e=>r(`[${f.name}]\n${e.target.result.slice(0,5000)}`); fr.readAsText(f); });
+  }
+  return `[${f.name} — ${fmtSz(f.size)}, 바이너리 파일: 파일명·크기 참고]`;
+}
+
+// ─────────────────────────────────────────
+//  MAIN ANALYSIS
+// ─────────────────────────────────────────
+async function runAnalysis() {
+  const paste = document.getElementById('pasteArea').value.trim();
+  showOverlay('고객사 자료 분석 중...');
+
+  const allQs = SECTIONS.flatMap(s => s.questions.map(q => ({ id: q.id, text: q.text })));
+
+  const formData = new FormData();
+  formData.append('paste', paste);
+  formData.append('questions', JSON.stringify(allQs));
+  for (const f of uploadedFiles) formData.append('files', f);
+
+  try {
+    const res = await fetch('/api/analyze', {
+      method: 'POST',
+      body: formData
+    });
+    const data = await res.json();
+    hideOverlay();
+
+    if (!data.ok) throw new Error(data.error || '서버 오류');
+    const parsed = data.data;
+
+    customerInfo = parsed.customer || { name:'분석된 고객사', meta:'' };
+    aiDrafts = parsed.drafts || {};
+
+    document.getElementById('custChip').textContent = customerInfo.name;
+    document.getElementById('custChip').style.display = 'inline-block';
+    document.getElementById('sbCustomer').innerHTML = `
+      <div class="sb-customer-name">${customerInfo.name}</div>
+      <div class="sb-customer-meta">${customerInfo.meta}</div>`;
+
+    discGenerated = true;
+    renderDiscovery();
+    buildSectionNav();
+    updateProgress();
+    switchTab(2);
+    document.getElementById('tab2').classList.add('active');
+
+  } catch(e) {
+    hideOverlay();
+    alert('분석 중 오류가 발생했습니다: ' + e.message);
+  }
+}
+
+// ─────────────────────────────────────────
+//  RENDER DISCOVERY
+// ─────────────────────────────────────────
+function renderDiscovery() {
+  const wrap = document.getElementById('discWrap');
+  wrap.innerHTML = '';
+
+  SECTIONS.forEach(sec => {
+    const confirmedInSec = sec.questions.filter(q=>confirmed[q.id]).length;
+
+    // Section header (sticky)
+    const hdr = document.createElement('div');
+    hdr.className = 'disc-section-hdr';
+    hdr.id = `hdr-${sec.id}`;
+    hdr.innerHTML = `
+      <span class="section-emoji">${sec.emoji}</span>
+      <span class="section-title">${sec.title}</span>
+      <span class="section-progress">${confirmedInSec}/${sec.questions.length} 확정</span>`;
+    wrap.appendChild(hdr);
+
+    sec.questions.forEach(q => {
+      wrap.appendChild(renderQCard(q));
+    });
+  });
+}
+
+function renderQCard(q) {
+  const card = document.createElement('div');
+  card.className = `q-card${confirmed[q.id]?' confirmed':''}${threads[q.id].length?' has-comment':''}`;
+  card.id = `card-${q.id}`;
+
+  const draft = aiDrafts[q.id] || '';
+  const isConfirmed = confirmed[q.id];
+  const commentCount = threads[q.id].length;
+
+  card.innerHTML = `
+    <div class="q-head">
+      <div class="q-num">${q.id.replace('q','').replace('_','.')}</div>
+      <div class="q-main">
+        <div class="q-text">${q.text}</div>
+        <span class="q-badge ${q.priority}">${q.priority}</span>
+        ${commentCount ? `<span class="comment-count" style="display:inline-flex;margin-left:8px;">💬 ${commentCount}개</span>` : ''}
+      </div>
+    </div>
+
+    <div class="ai-answer" id="aibox-${q.id}">
+      <div class="ai-answer-head">
+        <div class="ai-avatar">S</div>
+        스팬딧 AI 초안
+      </div>
+      <div class="ai-answer-text">${formatDraft(draft)}</div>
+    </div>
+
+    <div class="thread" id="thread-${q.id}">
+      ${threads[q.id].map(c => renderComment(c)).join('')}
+    </div>
+
+    <div class="q-input-row">
+      <div class="q-input-avatar">${getInitial()}</div>
+      <textarea class="q-input" id="input-${q.id}"
+        placeholder="댓글 달기... (수정사항, 보완 내용, 추가 질문 등)"
+        onkeydown="handleQKey(event,'${q.id}')"
+        oninput="autoResize(this)"></textarea>
+      <button class="q-send-btn" onclick="addComment('${q.id}')">보내기</button>
+    </div>
+
+    <div class="q-actions">
+      <button class="confirm-btn ${isConfirmed?'confirmed':''}" id="confirm-${q.id}" onclick="toggleConfirm('${q.id}')">
+        ${isConfirmed ? '✓ 확정됨' : '✓ 확정'}
+      </button>
+      <span class="q-card-status" id="status-${q.id}">
+        ${isConfirmed ? '내용 확정 · 세팅에 반영됩니다' : '검토 후 확정해주세요'}
+      </span>
+    </div>`;
+
+  return card;
+}
+
+function renderComment(c) {
+  const isCustomer = c.role === 'customer';
+  return `
+    <div class="thread-comment">
+      <div class="t-avatar ${isCustomer?'customer':'spendit'}">${c.avatar}</div>
+      <div class="t-right">
+        <div class="t-meta">
+          <span class="t-name">${c.name}</span>
+          <span class="t-role">${isCustomer?'고객사':'스팬딧'}</span>
+          <span class="t-time">${c.time}</span>
+        </div>
+        <div class="t-body">${c.body}</div>
+      </div>
+    </div>`;
+}
+
+function formatDraft(text) {
+  return text
+    .replace(/⚠ 확인 필요:([^<\n]+)/g, '<em>⚠ 확인 필요:$1</em>')
+    .replace(/\n/g, '<br>');
+}
+
+function getInitial() { return customerInfo.name ? customerInfo.name[0] : '나'; }
+
+// ─────────────────────────────────────────
+//  COMMENT & CONFIRM
+// ─────────────────────────────────────────
+function handleQKey(e, qid) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); addComment(qid); }
+}
+
+function addComment(qid) {
+  const inp = document.getElementById(`input-${qid}`);
+  const text = inp.value.trim();
+  if (!text) return;
+
+  const now = new Date();
+  const time = now.toLocaleTimeString('ko-KR', {hour:'2-digit',minute:'2-digit'});
+
+  threads[qid].push({
+    role: 'customer',
+    avatar: getInitial(),
+    name: customerInfo.name || '고객사',
+    body: text,
+    time
+  });
+
+  inp.value = '';
+  inp.style.height = 'auto';
+
+  // Re-render just this card
+  const card = document.getElementById(`card-${qid}`);
+  const q = findQ(qid);
+  if (card && q) {
+    const newCard = renderQCard(q);
+    card.replaceWith(newCard);
+  }
+  updateProgress();
+}
+
+function toggleConfirm(qid) {
+  confirmed[qid] = !confirmed[qid];
+  const card = document.getElementById(`card-${qid}`);
+  const q = findQ(qid);
+  if (card && q) {
+    const newCard = renderQCard(q);
+    card.replaceWith(newCard);
+  }
+  updateProgress();
+  refreshSectionHeaders();
+
+  // unlock setup if >50%
+  const pct = confirmedCount() / totalQ();
+  if (pct >= 0.5) {
+    document.getElementById('tab3').classList.add('done');
+  }
+}
+
+function findQ(qid) {
+  for (const s of SECTIONS) {
+    const q = s.questions.find(q => q.id === qid);
+    if (q) return q;
+  }
+  return null;
+}
+
+function refreshSectionHeaders() {
+  SECTIONS.forEach(sec => {
+    const el = document.getElementById(`hdr-${sec.id}`);
+    if (!el) return;
+    const cnt = sec.questions.filter(q=>confirmed[q.id]).length;
+    el.querySelector('.section-progress').textContent = `${cnt}/${sec.questions.length} 확정`;
+  });
+}
+
+// ─────────────────────────────────────────
+//  PROGRESS
+// ─────────────────────────────────────────
+function updateProgress() {
+  const total = totalQ();
+  const done = confirmedCount();
+  const pct = total ? Math.round(done/total*100) : 0;
+  const circ = document.getElementById('progCircle');
+  const dashLen = 100.5;
+  circ.setAttribute('stroke-dashoffset', dashLen - (dashLen * pct / 100));
+  document.getElementById('progNum').textContent = pct + '%';
+  document.getElementById('progConfirmed').textContent = `${done} / ${total}`;
+  document.getElementById('progPending').textContent = `전체 ${total}개 질문`;
+}
+
+// ─────────────────────────────────────────
+//  SECTION NAV
+// ─────────────────────────────────────────
+function buildSectionNav() {
+  const nav = document.getElementById('sectionNav');
+  nav.innerHTML = SECTIONS.map(s => `
+    <div class="nav-item" id="nav-${s.id}" onclick="scrollToSection('${s.id}')">
+      <span>${s.emoji}</span>
+      <span style="flex:1;font-size:11px;">${s.title}</span>
+      <span class="nav-count">${s.questions.length}</span>
+    </div>`).join('');
+}
+
+function scrollToSection(sid) {
+  const el = document.getElementById(`hdr-${sid}`);
+  if (el) {
+    switchTab(2);
+    el.scrollIntoView({ behavior:'smooth', block:'start' });
+  }
+}
+
+// ─────────────────────────────────────────
+//  SETUP GUIDE GENERATION
+// ─────────────────────────────────────────
+async function generateSetup() {
+  showOverlay('스팬딧 세팅 가이드 생성 중...');
+  switchTab(3);
+
+  // Summarize confirmed + commented
+  const summary = SECTIONS.map(s => {
+    return `## ${s.emoji} ${s.title}\n` +
+      s.questions.map(q => {
+        const draft = aiDrafts[q.id] || '(초안 없음)';
+        const comments = threads[q.id].map(c=>`  → [${c.name}] ${c.body}`).join('\n');
+        const isConf = confirmed[q.id] ? '[확정]' : '[미확정]';
+        return `${isConf} Q. ${q.text}\n  AI초안: ${draft}${comments?'\n'+comments:''}`;
+      }).join('\n');
+  }).join('\n\n');
+
+  const prompt = `다음은 고객사 디스커버리 미팅 결과입니다.
+
+${summary}
+
+위 내용을 바탕으로 스팬딧 11단계 세팅 가이드를 작성해주세요.
+
+형식:
+**[고객사 요약]**
+- 회사명 / 규모 / ERP / 핵심 특이사항
+
+**[스팬딧 세팅 11단계]**
+각 단계:
+### 단계N. [단계명]
+- **우선순위**: 필수/권장/선택
+- **권장 설정값**: (구체적인 값과 실제 메뉴 경로 포함)
+- **디스커버리 근거**: (어떤 답변을 기반으로 이 설정을 권장하는지)
+- **주의사항**: (이 고객사 특이사항)
+
+**[데모 핵심 어필 포인트 Top 3]**
+(디스커버리 결과 기반으로 이 고객사에게 가장 임팩트 있는 것)`;
+
+  setupMessages = [{ role:'user', content: prompt }];
+
+  try {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: setupMessages })
+    });
+    const data = await res.json();
+    hideOverlay();
+
+    if (!data.ok) throw new Error(data.error || '서버 오류');
+    const reply = data.text || '';
+    setupMessages.push({ role:'assistant', content:reply });
+
+    document.getElementById('setupLocked').style.display = 'none';
+    const sc = document.getElementById('setupContent');
+    sc.style.display = 'flex';
+
+    addSetupMsg('ai', reply, true);
+
+    // followup pills
+    const chat = document.getElementById('setupChat');
+    const pills = document.createElement('div');
+    pills.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;padding:4px 0 8px;';
+    ['카테고리 매핑 표로 정리해줘','승인 플로우 시나리오 써줘','ERP Export 설정 단계별로','데모 30분 시나리오 짜줘'].forEach(q => {
+      const p = document.createElement('button');
+      p.style.cssText = 'font-size:11px;padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:var(--white);color:var(--mid);cursor:pointer;font-family:inherit;transition:all .15s;';
+      p.textContent = q;
+      p.onmouseenter = () => { p.style.background='var(--blue-dim)'; p.style.color='var(--blue)'; p.style.borderColor='var(--blue)'; };
+      p.onmouseleave = () => { p.style.background='var(--white)'; p.style.color='var(--mid)'; p.style.borderColor='var(--border)'; };
+      p.onclick = () => { document.getElementById('setupInput').value = q; sendSetupMsg(); };
+      pills.appendChild(p);
+    });
+    chat.appendChild(pills);
+
+  } catch(e) {
+    hideOverlay();
+    alert('생성 중 오류: ' + e.message);
+  }
+}
+
+// ─────────────────────────────────────────
+//  SETUP CHAT
+// ─────────────────────────────────────────
+function handleSetupKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendSetupMsg(); }
+}
+
+async function sendSetupMsg() {
+  if (isSetupLoading) return;
+  const inp = document.getElementById('setupInput');
+  const text = inp.value.trim();
+  if (!text) return;
+
+  addSetupMsg('user', text);
+  inp.value = ''; inp.style.height = 'auto';
+  setupMessages.push({ role:'user', content:text });
+
+  isSetupLoading = true;
+  document.getElementById('setupSend').disabled = true;
+  addSetupTyping();
+
+  try {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: setupMessages })
+    });
+    const data = await res.json();
+    removeSetupTyping();
+    if (!data.ok) throw new Error(data.error || '서버 오류');
+    const reply = data.text || '';
+    setupMessages.push({ role:'assistant', content:reply });
+    addSetupMsg('ai', reply, true);
+  } catch(e) {
+    removeSetupTyping();
+    addSetupMsg('ai', '❌ 오류가 발생했습니다.', true);
+  }
+
+  isSetupLoading = false;
+  document.getElementById('setupSend').disabled = false;
+}
+
+function addSetupMsg(role, content, isHtml=false) {
+  const chat = document.getElementById('setupChat');
+  const div = document.createElement('div');
+  div.className = `setup-msg ${role}`;
+  const av = document.createElement('div');
+  av.className = `setup-av ${role}`;
+  av.textContent = role === 'ai' ? 'S' : '나';
+  const bubble = document.createElement('div');
+  bubble.className = 'setup-bubble';
+  if (isHtml) bubble.innerHTML = fmtReply(content);
+  else bubble.textContent = content;
+  div.appendChild(av); div.appendChild(bubble);
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function addSetupTyping() {
+  const chat = document.getElementById('setupChat');
+  const div = document.createElement('div');
+  div.className = 'setup-msg ai'; div.id = 'setupTyping';
+  div.innerHTML = `<div class="setup-av ai">S</div><div class="setup-bubble"><div class="typing-dots"><span></span><span></span><span></span></div></div>`;
+  chat.appendChild(div); chat.scrollTop = chat.scrollHeight;
+}
+function removeSetupTyping() { const t=document.getElementById('setupTyping'); if(t)t.remove(); }
+
+function fmtReply(t) {
+  return t
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/`([^`]+)`/g,'<code>$1</code>')
+    .replace(/^### (.+)$/gm,'<h4 style="font-size:12.5px;font-weight:700;margin:10px 0 4px;color:var(--navy);">$1</h4>')
+    .replace(/^## (.+)$/gm,'<h4 style="font-size:13px;font-weight:700;margin:10px 0 4px;color:var(--navy);">$1</h4>')
+    .replace(/^- (.+)$/gm,'<li style="margin:2px 0;">$1</li>')
+    .replace(/(<li[^>]*>.*?<\/li>\n?)+/gs, m => `<ul style="padding-left:14px;margin:4px 0;">${m}</ul>`)
+    .replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>');
+}
+
+// ─────────────────────────────────────────
+//  UTILS
+// ─────────────────────────────────────────
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+function showOverlay(t) { document.getElementById('overlayText').textContent=t; document.getElementById('overlay').classList.add('show'); }
+function hideOverlay() { document.getElementById('overlay').classList.remove('show'); }
+
+// ─────────────────────────────────────────
+//  SYSTEM PROMPT
+// ─────────────────────────────────────────
+const SYSTEM_PROMPT = `당신은 스팬딧(Spendit) 경비관리 솔루션 전문가이자 세일즈 어드바이저입니다.
+고객사 자료를 분석하고, 디스커버리 미팅 질문에 대한 초안 답변을 생성하며, 스팬딧 세팅 가이드를 제공합니다.
+
+## 스팬딧 핵심 기능
+- 폴리시(Policy): 카테고리+승인체계+규정을 묶은 독립 정책 단위 (부서/팀/지점별)
+- 카테고리 = 계정과목 (한도·증빙·참석자·메모·태그 필수 설정 가능)
+- 태그 = ERP 관리항목 (프로젝트코드·거래처·CC 등, ERP 직접 연동 가능)
+- 승인모드: 단일제출 / 단일승인 / 멀티선택승인 / 멀티지정승인
+- Plan(플랜): 사전품의 기능. 예산 배정 → 실지출 → 후보고 연결
+- 거리 지출: 출발지→도착지 입력 시 유종별 km당 금액 자동 계산
+- 보고서 스케줄 자동제출: 특정 주기/시간에 자동 제출
+- 매입세액 불공제: 카테고리별 설정 (해외결제·PG사 처리 핵심)
+- 보고서 환율: 해외결제 건 지출일 기준 환율 자동 계산
+- ERP 연동: 더존iU·SmartA·SAP·이카운트 업로드 양식 / 태그·거래처 직접 연동
+
+## 스팬딧 11단계 세팅
+1. 조직/사용자 권한 (CO/CA/PO/PA/Approver/일반)
+2. 결제수단 (법인카드 연동방식, 개인결제 허용)
+3. 지출 카테고리 (계정과목, CSV 대량 업로드)
+4. 카테고리별 필수입력 (참석자·메모·태그·증빙 강제)
+5. 금액 한도 (1회/일/월 누적, 영수증 첨부 최소금액)
+6. 시간·예외 규정 (야근식대·주말·출장 예외)
+7. 승인 정책 (금액별 전결, 다단계 승인, 자동승인)
+8. 증빙 규정 (OCR, 필수첨부 카테고리)
+9. 보고서 설정 (마감, 자동제출, 리마인더, Plan)
+10. 가시성/수정권한 (팀장 조회, 승인후 수정제한)
+11. Export/ERP 연동 (계정과목 매핑, VAT, 프로젝트코드)
+
+## 답변 원칙
+- 고객사 자료에서 파악된 내용은 구체적으로 반영
+- 파악 불가 시 "⚠ 확인 필요: [추정 또는 질문 제안]" 명시
+- 실제 스팬딧 메뉴 경로 포함 (예: 폴리시 > 카테고리 > 설정)
+- 표·목록으로 정리, 구체적 설정값 예시 포함
+- 한국어로 답변`;
+
+</script>
+</body>
+</html>
