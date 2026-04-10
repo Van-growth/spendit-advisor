@@ -218,7 +218,7 @@ app.post('/api/analyze', requireSession, upload.array('files', 10), async (req, 
     const qList = questions.map(q => `[${q.id}] ${q.text}`).join('\n');
     const prompt = `다음은 고객사의 경비/비용 관련 자료입니다.\n\n=== 고객사 자료 ===\n${pasteText || '(텍스트 입력 없음)'}\n${fileCtx ? '\n=== 첨부 파일 ===\n' + fileCtx : ''}\n\n위 자료를 분석해서 아래 두 가지를 JSON으로만 응답해주세요. 마크다운 코드블록 없이 순수 JSON만.\n\n1. "customer": { "name": "회사명(없으면 미상)", "meta": "업종·규모·ERP 등 핵심 정보 2줄 이내" }\n2. "drafts": 각 질문 ID에 대한 초안 답변\n\n질문 목록:\n${qList}\n\n{\n  "customer": { "name": "...", "meta": "..." },\n  "drafts": {\n    "q1_1": "자료 기반 초안 답변. 없으면 ⚠ 확인 필요: [추천 내용]",\n    ...\n  }\n}`;
     const msg = await anthropic.messages.create({
-      model: 'claude-sonnet-4-5-20251001',
+      model: 'claude-sonnet-4-5',
       max_tokens: 4000,
       system: SYSTEM_PROMPT,
       messages: [{ role: 'user', content: prompt }]
@@ -236,7 +236,7 @@ app.post('/api/chat', requireSession, async (req, res) => {
   try {
     const { messages } = req.body;
     const msg = await anthropic.messages.create({
-      model: 'claude-sonnet-4-5-20251001',
+      model: 'claude-sonnet-4-5',
       max_tokens: 3000,
       system: SYSTEM_PROMPT,
       messages,
